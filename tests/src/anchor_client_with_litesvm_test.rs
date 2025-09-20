@@ -31,7 +31,7 @@ fn test_make_and_take_with_anchor_client() {
     let maker = Keypair::new();
     let taker = Keypair::new();
     svm.airdrop(&maker.pubkey(), 10_000_000_000).unwrap();
-
+    svm.airdrop(&taker.pubkey(), 10_000_000_000).unwrap();
 
     // Create two token mints
     let mint_a = Keypair::new();
