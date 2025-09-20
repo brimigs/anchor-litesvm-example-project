@@ -6,30 +6,30 @@ use solana_sdk::signature::Signer;
 use spl_associated_token_account::get_associated_token_address;
 
 #[test]
-fn test_escrow_with_anchor_litesvm() {
+fn test_make_and_take_with_anchor_litesvm() {
 
-    // 1-line initialization!
+    // 1-line initialization
     let mut ctx = AnchorLiteSVM::build_with_program(
         Pubkey::from_str_const("8LTee82TkoqBoBjBAz2yAAKSj9ckr7zz5vMi6rJQTwhJ"),
         include_bytes!("../../target/deploy/anchor_escrow.so"),
     );
 
-    // Create ALL test accounts in just 4 lines!
+    // Create all test accounts in just 4 lines
     let maker = ctx.create_funded_account(10_000_000_000).unwrap();
     let taker = ctx.create_funded_account(10_000_000_000).unwrap();
     let mint_a = ctx.create_token_mint(&maker, 9).unwrap();
     let mint_b = ctx.create_token_mint(&maker, 9).unwrap();
 
-    // Create and fund token accounts in 2 lines!
+    // Create and fund token accounts in 2 lines
     let maker_ata_a = ctx.create_token_account(&maker, &mint_a.pubkey(), Some((1_000_000_000, &maker))).unwrap();
     let taker_ata_b = ctx.create_token_account(&taker, &mint_b.pubkey(), Some((500_000_000, &maker))).unwrap();
 
-    // PDAs
+    // create escrow PDA 
     let seed = 42u64;
     let (escrow_pda, _) = ctx.find_pda(&[b"escrow", maker.pubkey().as_ref(), &seed.to_le_bytes()]);
     let vault = get_associated_token_address(&escrow_pda, &mint_a.pubkey());
 
-    // MAKE: Build and execute in one expression!
+    // MAKE: Build and execute in one expression
     ctx.instruction_builder("make")
         .signer("maker", &maker)
         .account_mut("escrow", escrow_pda)
@@ -50,7 +50,7 @@ fn test_escrow_with_anchor_litesvm() {
     ctx.assert_token_balance(&vault, 1_000_000_000);
     ctx.assert_token_balance(&maker_ata_a, 0);
 
-    // TAKE: Another one-liner execution!
+    // TAKE: Build and execute in one expression
     let taker_ata_a = get_associated_token_address(&taker.pubkey(), &mint_a.pubkey());
     let maker_ata_b = get_associated_token_address(&maker.pubkey(), &mint_b.pubkey());
 
@@ -72,7 +72,7 @@ fn test_escrow_with_anchor_litesvm() {
         .unwrap()
         .assert_success();
 
-    // Final verification in 3 lines!
+    // Final verification in 3 lines
     ctx.assert_accounts_closed(&[&escrow_pda, &vault]);
     ctx.assert_token_balance(&taker_ata_a, 1_000_000_000);
     ctx.assert_token_balance(&maker_ata_b, 500_000_000);
